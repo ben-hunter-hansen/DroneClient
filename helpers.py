@@ -1,3 +1,8 @@
+class Network:
+	@staticmethod
+	def Arduino():
+		return ('192.168.1.21',10000)
+
 class Color:
 	@staticmethod
 	def Red():
@@ -28,6 +33,10 @@ class Movement:
 	def Stop():
 		return 'stop'
 
+	@staticmethod
+	def All():
+		return [Movement.Forward(),Movement.Left(),Movement.Right(),Movement.Reverse(),Movement.Stop()]
+
 
 class Shapes:
 	@staticmethod
@@ -48,4 +57,8 @@ class Shapes:
 
 	@staticmethod
 	def Square():
-		 return [[75,525],[75,475],[125,475],[125,525]]
+		return [[75,525],[75,475],[125,475],[125,525]]
+
+	@staticmethod
+	def All():
+		return [Shapes.ArrowUp(),Shapes.ArrowLeft(),Shapes.ArrowRight(),Shapes.ArrowDown(),Shapes.Square()]

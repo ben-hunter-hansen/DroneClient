@@ -1,27 +1,24 @@
 import socket
+import threading
 
 class ArduinoClient:
-	def __init__(self, conn_info):
-		self.connection_info = conn_info
-		self.serv_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+	def __init__(self,network_info):
+		self.connection = network_info
+		self.socket = None
+		self.recv_event = None
 
-	def is_alive(self):
-		return self.send('test')
+	def apply_on_recv(self,f):
+		self.recv_event = f
 
-	def move(self,direction):
-		if direction is not None:
-			return self.send(direction)
-		else:
-			return None
-
-	def send(self, command):
-		response = None
-
+	def send(self,command):
+		self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		try:
-			sent = self.serv_sock.sendto(command,self.connection_info)
-			data, server = self.serv_sock.recvfrom(4096)
-			response = data
-		except Exception, e:
-			print str(e)
+			sent = self.socket.sendto(command,self.connection)
+			reply = None
+			while reply is None:
+				reply, server = self.socket.recvfrom(1024)
+			self.recv_event(reply)
 		finally:
-			return response
+			self.socket.close()
+
+

@@ -1,86 +1,72 @@
-import threading
 import pygame
+import time
 
-from client import *
 from helpers import *
+from client import *
 
-class Window (threading.Thread):
+
+
+class Window:
     def __init__(self, dimensions):
-        threading.Thread.__init__(self)
         self.xy = dimensions
         pygame.init()
         self.screen = pygame.display.set_mode(self.xy)
-        self.running = True
-        self.arduino = None
+        self.movement = Movement.Stop()
+        self.exit = False
 
-    def attach(self,arduino):
-    	self.arduino = arduino
+    def hande_event(self,event):
+        if event.type == pygame.KEYDOWN:
+            self.movement = self.get_movement(event.key)
+        elif event.type == pygame.KEYUP:
+            self.movement = Movement.Stop()
+        elif event.type == pygame.QUIT:
+            self.exit = True
 
-    def run(self):
-        while self.running:
-                self.draw_components()
-            	self.handle_events(self.render)
-            	pygame.display.flip()
+    def get_movement(self,key):
+        movement = None
+        if key == pygame.K_w:
+            movement = Movement.Forward()
+        elif key == pygame.K_s:
+            movement = Movement.Reverse()
+        elif key == pygame.K_a:
+            movement = Movement.Left()
+        elif key == pygame.K_d:
+            movement = Movement.Right()
+        return movement
 
-    def handle_events(self,draw_func):
-    	for event in pygame.event.get():
-    		if event.type == pygame.QUIT:
-    			self.quit()
-    		elif event.type == pygame.KEYDOWN:
-    			if event.key == pygame.K_w:
-    				response = self.arduino.move(Movement.Forward())
-    				draw_func(response,Movement.Forward())
-    			elif event.key == pygame.K_a:
-    				response = self.arduino.move(Movement.Left())
-    				draw_func(response, Movement.Left())
-    			elif event.key == pygame.K_s:
-    				response = self.arduino.move(Movement.Reverse())
-    				draw_func(response, Movement.Reverse())
-    			elif event.key == pygame.K_d:
-    				response = self.arduino.move(Movement.Right())
-    				draw_func(response, Movement.Right())
-    		elif event.type == pygame.KEYUP:
-    			response = self.arduino.move(Movement.Stop())
-    			draw_func(response, Movement.Stop())
+    def draw_hud(self):
+        shapes = Shapes.All()
+        for shape in shapes:
+            pygame.draw.polygon(self.screen,Color.Red(),shape,2)
 
-    def draw_components(self):
-        pygame.draw.polygon(self.screen,Color.Red(),Shapes.ArrowUp(),2)
-        pygame.draw.polygon(self.screen,Color.Red(),Shapes.ArrowLeft(),2)
-        pygame.draw.polygon(self.screen,Color.Red(),Shapes.ArrowRight(),2)
-        pygame.draw.polygon(self.screen,Color.Red(),Shapes.ArrowDown(),2)
-        pygame.draw.polygon(self.screen,Color.Red(),Shapes.Square(),2)
+    def data_recv(self,reply):
+        self.screen.fill((0,0,0))
 
-    def render(self,msg, movement):
-    	self.screen.fill((0,0,0))
-    	if movement is Movement.Forward():
-    		pygame.draw.polygon(self.screen,Color.Blue(),Shapes.ArrowUp(),0)
-        elif movement is Movement.Left():
-            pygame.draw.polygon(self.screen,Color.Blue(), Shapes.ArrowLeft(),0)
-        elif movement is Movement.Reverse():
-            pygame.draw.polygon(self.screen,Color.Blue(), Shapes.ArrowDown(),0)
-        elif movement is Movement.Right():
-            pygame.draw.polygon(self.screen,Color.Blue(), Shapes.ArrowRight(),0)
-    	else:
-    		pygame.draw.polygon(self.screen, Color.Blue(),Shapes.Square(), 0)
-    	print msg
-    def quit(self):
-    	if self.running:
-    		self.running = False
+        movements = Movement.All()
+        shapes = Shapes.All()
+        index = 0
+        for m in movements:
+            if self.movement == m:
+                pygame.draw.polygon(self.screen,Color.Blue(),shapes[index],0)
+            index += 1
+        #print reply
 
+    def should_exit(self):
+        return self.exit
 
 def main():
 
-	# Create the window
-	gui = Window((800,600))
-	
-	# Set up arduino client
-	arduino = ArduinoClient(('192.168.1.21',10000))
+    window = Window((800,600))
+    arduino = ArduinoClient(Network.Arduino())
+    arduino.apply_on_recv(window.data_recv)
 
-	# Inject arduino client if connection succeeds
-	if arduino.is_alive() is not None:
-		print "Connection establised, starting GUI thread."
-		gui.attach(arduino)
-		gui.start()
-
+    done = False
+    while not done:
+        for event in pygame.event.get():
+            window.hande_event(event)
+        arduino.send(window.movement)
+        window.draw_hud()
+        pygame.display.flip()
+        done = window.should_exit()
 main();
 
