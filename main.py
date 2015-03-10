@@ -1,5 +1,6 @@
 import pygame
 import time
+import os
 
 from helpers import *
 from client import *
@@ -13,6 +14,7 @@ class Window:
         self.screen = pygame.display.set_mode(self.xy)
         self.movement = Movement.Stop()
         self.exit = False
+        self.icons = []
 
     def hande_event(self,event):
         if event.type == pygame.KEYDOWN:
@@ -23,7 +25,7 @@ class Window:
             self.exit = True
 
     def get_movement(self,key):
-        movement = None
+        movement = Movement.Stop()
         if key == pygame.K_w:
             movement = Movement.Forward()
         elif key == pygame.K_s:
@@ -35,21 +37,32 @@ class Window:
         return movement
 
     def draw_hud(self):
-        shapes = Shapes.All()
-        for shape in shapes:
-            pygame.draw.polygon(self.screen,Color.Red(),shape,2)
+        DrawUtils.RenderControls(self.screen,Color.Red(),Shapes.Controls(),2,pygame.draw.polygon)
+        DrawUtils.RenderIcons(self.screen,self.icons,(75,25),250)
+
 
     def data_recv(self,reply):
-        self.screen.fill((0,0,0))
+        self.screen.fill((50,50,50))
 
         movements = Movement.All()
-        shapes = Shapes.All()
+        shapes = Shapes.Controls()
         index = 0
         for m in movements:
             if self.movement == m:
                 pygame.draw.polygon(self.screen,Color.Blue(),shapes[index],0)
             index += 1
-        #print reply
+        
+        replyFont = pygame.font.SysFont("monospace", 16)
+        mov_label = replyFont.render(reply,1,Color.Blue())
+        self.screen.blit(mov_label,(140,40))
+
+
+    def load_icons(self):
+        icon_paths = Resource.Icons()
+        for i in icon_paths:
+            icon = pygame.image.load(os.path.join(i))
+            icon.convert()
+            self.icons.append(icon)
 
     def should_exit(self):
         return self.exit
@@ -57,6 +70,8 @@ class Window:
 def main():
 
     window = Window((800,600))
+    window.load_icons()
+
     arduino = ArduinoClient(Network.Arduino())
     arduino.apply_on_recv(window.data_recv)
 

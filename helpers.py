@@ -3,6 +3,11 @@ class Network:
 	def Arduino():
 		return ('192.168.1.21',10000)
 
+class Resource:
+	@staticmethod
+	def Icons():
+		return ['res/wheel.png','res/battery.png','res/network.png']
+
 class Color:
 	@staticmethod
 	def Red():
@@ -60,5 +65,20 @@ class Shapes:
 		return [[75,525],[75,475],[125,475],[125,525]]
 
 	@staticmethod
-	def All():
+	def Controls():
 		return [Shapes.ArrowUp(),Shapes.ArrowLeft(),Shapes.ArrowRight(),Shapes.ArrowDown(),Shapes.Square()]
+
+
+class DrawUtils:
+	@staticmethod
+	def RenderIcons(screen,icons, xy, increment):
+		x, y = xy
+		for icon in icons:
+			screen.blit(icon,(x,y))
+			x += increment
+
+
+	@staticmethod
+	def RenderControls(screen,color,shapes,thickness,callback):
+		for shape in shapes:
+			callback(screen,color,shape,thickness)
