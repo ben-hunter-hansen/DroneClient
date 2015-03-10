@@ -1,6 +1,7 @@
 import pygame
 import time
 import os
+import json
 
 from helpers import *
 from client import *
@@ -25,7 +26,7 @@ class Window:
             self.exit = True
 
     def get_movement(self,key):
-        movement = Movement.Stop()
+        movement = Movement.Stop() #enabled by default
         if key == pygame.K_w:
             movement = Movement.Forward()
         elif key == pygame.K_s:
@@ -42,7 +43,9 @@ class Window:
 
 
     def data_recv(self,reply):
+
         self.screen.fill((50,50,50))
+        data = json.loads(reply)
 
         movements = Movement.All()
         shapes = Shapes.Controls()
@@ -53,9 +56,13 @@ class Window:
             index += 1
         
         replyFont = pygame.font.SysFont("monospace", 16)
-        mov_label = replyFont.render(reply,1,Color.Blue())
-        self.screen.blit(mov_label,(140,40))
+        mov_label = replyFont.render(data['movement'],1,Color.Blue())
+        bat_label = replyFont.render(data['battery'],1,Color.Blue())
+        net_label = replyFont.render(data['network'],1,Color.Blue())
 
+        self.screen.blit(mov_label,(140,40))
+        self.screen.blit(bat_label,(390,40))
+        self.screen.blit(net_label,(640,40))
 
     def load_icons(self):
         icon_paths = Resource.Icons()
@@ -83,5 +90,6 @@ def main():
         window.draw_hud()
         pygame.display.flip()
         done = window.should_exit()
-main();
 
+
+ main()

@@ -77,7 +77,6 @@ class DrawUtils:
 			screen.blit(icon,(x,y))
 			x += increment
 
-
 	@staticmethod
 	def RenderControls(screen,color,shapes,thickness,callback):
 		for shape in shapes:
